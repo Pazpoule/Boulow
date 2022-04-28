@@ -19,7 +19,7 @@ def strToDate(data, variable):
     data["day"] = pd.to_numeric(data["day"])
     data["month"] = pd.to_numeric(data["month"])
     data["year"] = pd.to_numeric(data["year"])
-    data = data[(data["year"]<=2022) | (data["year"].isna())]
+    data = data[(data["year"]<=FIN) | (data["year"].isna())]
     data[variable] = pd.to_datetime(data[["day", "month", "year"]])
     data.drop(['day', 'month', 'year'], axis=1, inplace=True)
     return data
@@ -28,20 +28,22 @@ def etendre(data, variable):
     for annee in range(DEBUT, FIN + 1):
         data[variable + str(annee)] = 0
         if "DateDebut" in data.columns:
-            data.loc[(annee == data["DateDebut"].dt.year) & ((data["DateFin"] - data["DateDebut"]).dt.days > 0), variable + str(annee)] = data[variable] * (pd.to_datetime({"day": 31, "month": 12, "year": data["DateDebut"].dt.year}) - data["DateDebut"]).dt.days / (data["DateFin"] - data["DateDebut"]).dt.days
-            data.loc[(annee == data["DateFin"].dt.year) & ((data["DateFin"] - data["DateDebut"]).dt.days > 0), variable + str(annee)] = data[variable] * (data["DateFin"] - pd.to_datetime({"day": 1, "month": 1, "year": data["DateFin"].dt.year})).dt.days / (data["DateFin"] - data["DateDebut"]).dt.days
+            data["anneeFin"] = pd.to_datetime({"day": 31, "month": 12, "year": data["DateDebut"].dt.year})
+            data["anneeDebut"] = pd.to_datetime({"day": 1, "month": 1, "year": data["DateFin"].dt.year})
+            data.loc[(annee == data["DateDebut"].dt.year) & ((data["DateFin"] - data["DateDebut"]).dt.days > 0), variable + str(annee)] = data[variable] * ((data[["DateFin", "anneeFin"]].min(axis=1) - data["DateDebut"]).dt.days+1) / ((data["DateFin"] - data["DateDebut"]).dt.days+1)
+            data.loc[(annee == data["DateFin"].dt.year) & ((data["DateFin"] - data["DateDebut"]).dt.days > 0), variable + str(annee)] = data[variable] * ((data["DateFin"] - data[["DateDebut", "anneeDebut"]].max(axis=1)).dt.days+1) / ((data["DateFin"] - data["DateDebut"]).dt.days+1)
         else:
             data.loc[annee == data["DateSurvenance"].dt.year, variable + str(annee)] = data[variable]
     data.drop([variable], axis=1, inplace=True)
     return data
 
 
-adresse = "C:/Users/pnguyen/Desktop/ROOT/MADP/"
-afficheStats = False
+adresse = "C:/Users/zpaul/PycharmProjects/Boulow/assets/"
+afficheStats = True
 DEBUT = 2011
 FIN = 2022
 
-importPrime1 = pd.read_csv(adresse + 'PRIME0.csv', sep=';', encoding="ISO-8859-1")[["Police", "Dist.", "Code Pdt", "Date début", "Date fin", "Mt HT", "Commission"]]
+importPrime1 = pd.read_csv(adresse + 'PRIME1.csv', sep=';', encoding="ISO-8859-1")[["Police", "Dist.", "Code Pdt", "Date début", "Date fin", "Mt HT", "Commission"]]
 importPrime2 = pd.read_csv(adresse + 'PRIME2.csv', sep=';', encoding="ISO-8859-1")[["Police", "Dist.", "Code Pdt", "Date début", "Date fin", "Mt HT", "Commission"]]
 importSinistre = pd.read_csv(adresse + 'SINISTRE.csv', sep=';', encoding="ISO-8859-1")[["N° police", "Distributeur", "Produit", "Survenu le", "Charge Total (Ts)"]]
 print('--- Import des données: OK --------------------------------------------------------------------------------------------------')
@@ -54,7 +56,7 @@ dataPrime["Prime"] = pd.to_numeric(dataPrime["Prime"].str.replace(',','.'))
 dataPrime["Commission"] = pd.to_numeric(dataPrime["Commission"].str.replace(',','.'))
 dataPrime = strToDate(dataPrime, "DateFin")
 dataPrime = strToDate(dataPrime, "DateDebut")
-# On somme les primes par clé en se basant sur la date de fin (car certaine annulation de primes se font en cours d'année et n'ont donc pas la même date de debut)
+# On somme les primes par clé en se basant sur la date de fin (car certaine annulation de primes se font en cours d'année et n'ont donc pas la même date de debut) todo merge avec la premiere date de début
 dataPrime = dataPrime[["Police", "Distributeur", "Produit", "DateDebut", "DateFin"]].merge(dataPrime.groupby(['Police', 'Distributeur', 'Produit', 'DateFin']).sum().reset_index(), on=["Police", "Distributeur", "Produit", "DateFin"]).drop_duplicates()
 dataPrime.sort_values(by=["Police", "Distributeur", "Produit", "DateDebut"], ignore_index=True, inplace=True)
 print('--- Formatage PRIME: OK --------------------------------------------------------------------------------------------------')
@@ -112,10 +114,11 @@ print(f"Il y a {len(mauvaisLabel)} polices/Distr/Prod dans SINISTRE qui ne sont 
 print('--- Tests Adéquation: OK --------------------------------------------------------------------------------------------------')
 
 
-
+# todo récup les exclusions
 dataFormate = (dataFormatePrime.merge(dataFormateSinistre, on=["Police", "Distributeur", "Produit"], how="left"))
 dataFormate.drop_duplicates(inplace=True)
 dataFormate = dataFormate.fillna(0)
+dataFormate.to_csv(adresse+"premierjet.csv", sep=";", encoding="latin1")
 
 dataFormateParDistributeur = dataFormate.drop(["Produit", "Police"], axis=1).groupby(["Distributeur"]).sum().reset_index()
 for annee in range(DEBUT, FIN+1):
@@ -123,7 +126,7 @@ for annee in range(DEBUT, FIN+1):
     dataFormateParDistributeur["beneficeNet"+str(annee)] = dataFormateParDistributeur["Prime"+str(annee)] - dataFormateParDistributeur["Charge"+str(annee)] - dataFormateParDistributeur["Commission"+str(annee)]
 dataFormateParDistributeur["beneficeBrut"] = sum([dataFormateParDistributeur["beneficeBrut"+str(annee)] for annee in range(DEBUT, FIN+1)])
 dataFormateParDistributeur["beneficeNet"] = sum([dataFormateParDistributeur["beneficeNet"+str(annee)] for annee in range(DEBUT, FIN+1)])
-dataFormateParDistributeur.sort_values(by="beneficeNet", inplace=True, ascending=False)
+dataFormateParDistributeur.sort_values(by="beneficeNet2021", inplace=True, ascending=False)
 dataFormateParDistributeur.drop(["Prime"+str(annee) for annee in range(DEBUT, FIN+1)]+["Commission"+str(annee) for annee in range(DEBUT, FIN+1)]+["Charge"+str(annee) for annee in range(DEBUT, FIN+1)], axis=1, inplace=True)
 
 dataFormateParProduit = dataFormate.drop(["Distributeur", "Police"], axis=1).groupby(["Produit"]).sum().reset_index()
@@ -132,17 +135,15 @@ for annee in range(DEBUT, FIN+1):
     dataFormateParProduit["beneficeNet"+str(annee)] = dataFormateParProduit["Prime"+str(annee)] - dataFormateParProduit["Charge"+str(annee)] - dataFormateParProduit["Commission"+str(annee)]
 dataFormateParProduit["beneficeBrut"] = sum([dataFormateParProduit["beneficeBrut"+str(annee)] for annee in range(DEBUT, FIN+1)])
 dataFormateParProduit["beneficeNet"] = sum([dataFormateParProduit["beneficeNet"+str(annee)] for annee in range(DEBUT, FIN+1)])
-dataFormateParProduit.sort_values(by="beneficeNet", inplace=True, ascending=False)
+dataFormateParProduit.sort_values(by="beneficeNet2021", inplace=True, ascending=False)
 dataFormateParProduit.drop(["Prime"+str(annee) for annee in range(DEBUT, FIN+1)]+["Commission"+str(annee) for annee in range(DEBUT, FIN+1)]+["Charge"+str(annee) for annee in range(DEBUT, FIN+1)], axis=1, inplace=True)
 
 
 
 
+dataFormateParDistributeur[["Distributeur", "beneficeNet2021"]].groupby(by="Distributeur").sum().sort_values(by="beneficeNet2021", ascending=False).plot(kind="bar")
 
-
-
-
-
+# todo mettre en trimestriel
 
 
 
