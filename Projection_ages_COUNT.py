@@ -29,9 +29,9 @@ def definitionTauxIntraAnnuel(data):
     tauxIntraAnnuel_PresttoDC = len(dataDPCER[dataDPCER["age_dc"] == dataDPCER["age_liq_rc"]]) / len(dataDPCER[(dataDPCER["age_rad"] > 0) & (dataDPCER["age_liq_rc"] > 0)])
     return tauxIntraAnnuel_RadtoPrest, tauxIntraAnnuel_RadtoDC, tauxIntraAnnuel_CERtoPrest, tauxIntraAnnuel_CERtoDC, tauxIntraAnnuel_PresttoDC
 
-def projectionAgesCOUNT(data, PL_ME, frequence, TGH05, TGF05, tauxIntraAnnuel_RadtoPrest, tauxIntraAnnuel_RadtoDC, tauxIntraAnnuel_PresttoDC, tauxIntraAnnuel_CERtoPrest, tauxIntraAnnuel_CERtoDC, difference_age_DD, tauxNuptialite, tauxReversion, ageMinReversion, lissageTaux = True, utiliserTableExp = False):
-    COUNTActiftoRad, COUNTActiftoCER, COUNTRadtoPrest, COUNTCERtoPrest, COUNTDC, COUNTDC_H, COUNTDC_F, COUNTNul = definitionTables_COUNT(data, PL_ME, plot=True)
-    dataDecede = data[data["age_dc"]>0]
+def projectionAgesCOUNT(data, frequence, tables, TGH05, TGF05, tauxIntraAnnuel_RadtoPrest, tauxIntraAnnuel_RadtoDC, tauxIntraAnnuel_PresttoDC, tauxIntraAnnuel_CERtoPrest, tauxIntraAnnuel_CERtoDC, difference_age_DD, tauxNuptialite, ageMinReversion, lissageTaux = True, utiliserTableExp = False):
+    (COUNTActiftoRad, COUNTActiftoCER, COUNTRadtoPrest, COUNTCERtoPrest, COUNTDC, COUNTDC_H, COUNTDC_F, COUNTNul) = tables
+    dataDecede = data[data["age_dc"] > 0]
     data = data[data["age_dc"].isna()]
     data["Type"] = data["Statut_ADH"]
     data = data.sample(frac=frequence) # échantilonne et mélange les individus

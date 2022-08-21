@@ -16,14 +16,14 @@ import statistics
 import seaborn as sns
 import math
 from scipy.optimize import curve_fit
-import plotly.io as pio
-pio.renderers.default = "browser"
+# import plotly.io as pio
+# pio.renderers.default = "browser"
 
 adresse = "C:/Users/pnguyen/Desktop/ROOT/Projection_Photo/"
 data = pd.read_csv(adresse + 'Tables/DATA_nettoye.csv')
 AnneeCalcul = 2021
 
-def encode_data_NN(base, AnneeCalcul):
+def encode_data_NN(base, AnneeCalcul=AnneeCalcul):
     print("Execute encode_data_NN ---------------------")
     base = base[(base["type_ADH"] == "DP") | (base["type_ADH"] == "CER")]
     oneHot_profession = pd.get_dummies(base.profession, prefix='profession')
@@ -73,6 +73,8 @@ base_NN["age_dc_hat"] = base_NN["age_dc_hat"] * dicoSD["age_dc"] + dicoMoyenne["
 base_NN.loc[base_NN["age_liq_rc_hat"]<base_NN["age_1ere_aff"], "age_liq_rc_hat"] = base_NN["age_1ere_aff"]
 base_NN.loc[base_NN["age_rad_hat"]<base_NN["age_1ere_aff"], "age_rad_hat"] = base_NN["age_1ere_aff"]
 base_NN.loc[base_NN["age_dc_hat"]<base_NN["age_1ere_aff"], "age_dc_hat"] = base_NN["age_1ere_aff"]
+base_NN.loc[base_NN["age_liq_rc_hat"]>base_NN["age_dc_hat"], "age_liq_rc_hat"] = base_NN["age_dc_hat"]
+base_NN.loc[base_NN["age_rad_hat"]>base_NN["age_dc_hat"], "age_rad_hat"] = base_NN["age_dc_hat"]
 
 base_NN.to_csv(adresse + f"Tables/base_NN_projete.csv", index=False)
 
@@ -103,11 +105,6 @@ for colonne in ["an_nais", "age_1ere_aff", "age_liq_rc", "age_rad", "age_dc", "N
 
 datasetValidation = datasetValidation.merge(data[["PL_ME", "Homme_Femme", "type_ADH", "profession", "cp", "Statut_ADH", "an_nais", "age_1ere_aff", "age_liq_rc", "age_rad", "age_dc", "NBR_TRIM_CARR", "PTS_RB_CARR", "PTS_RC_CARR", "ageMinRtetraite", "ageTauxPlein", "NUM_ADHERENT_FONCT", "NUM_ADHERENT"]], how="inner", on=["PL_ME", "Homme_Femme", "type_ADH", "profession", "cp", "Statut_ADH", "an_nais", "age_1ere_aff", "age_liq_rc", "age_rad", "age_dc", "NBR_TRIM_CARR", "PTS_RB_CARR", "PTS_RC_CARR", "ageMinRtetraite", "ageTauxPlein"]).drop_duplicates(ignore_index=True)
 datasetValidation.to_csv(adresse + f"Tables/datasetValidation.csv", index=False)
-
-
-
-
-
 
 
 

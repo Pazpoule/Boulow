@@ -92,7 +92,7 @@ def definitionTables_COUNT(data, filtrePLME=["PL", "ME"], plot=False):
         # ageRadtoPrest.to_csv(adresse + f"Tables/Loi_RadtoPrest.csv")
         if plot: plt.plot(ageRadtoPrest['taux'], label="ageRadtoPrest")
 
-    if len(dataDPCER) == 0:
+    if len(dataDPCER) == 0 or "age_liq_id" not in dataDPCER.columns:
         ageID = None
     else:
         ageID = pd.DataFrame(dataDPCER["age_liq_id"].value_counts())
@@ -167,7 +167,7 @@ def definitionTables_COUNT(data, filtrePLME=["PL", "ME"], plot=False):
         ageDC_F = lissage(ageDC_F, plot)
 
     print('--- FIN tables_COUNT --------------------------------------------------------------------------------------------------')
-    return ageActiftoRad, ageActiftoCER, ageRadtoPrest, ageCERtoPrest, ageDC, ageDC_H, ageDC_F, ageNul
+    return (ageActiftoRad, ageActiftoCER, ageRadtoPrest, ageCERtoPrest, ageDC, ageDC_H, ageDC_F, ageNul)
 
 
 

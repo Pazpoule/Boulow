@@ -1,3 +1,4 @@
+import matplotlib
 import numpy
 import pandas as pd
 import datetime
@@ -16,8 +17,7 @@ import statistics
 import seaborn as sns
 import math
 from scipy.optimize import curve_fit
-# import plotly.io as pio
-# pio.renderers.default = "browser"
+
 from Passif.Projection_ages_COUNT import *
 from Passif.VolumeAnnuel import *
 
@@ -62,15 +62,13 @@ if __name__ == '__main__':
     tauxReversion = 0.54
     ageMinReversion = 60
     tauxRecouvrement = 0.95
-    frequence = 0.01
     coeffVFU = 15
     ajustementTemporellePoints = 1.8
 
-    TGH05 = pd.read_excel(adresse + "Tables/TableMortaliteTGH05.xlsx", index_col=None, sheet_name='ProbaDC')
-    TGF05 = pd.read_excel(adresse + "Tables/TableMortaliteTGF05.xlsx", index_col=None, sheet_name='ProbaDC')
+
     difference_age_DD = pd.read_csv(adresse + 'Tables/difference_age_DD.csv', sep=';', encoding="ISO-8859-1")
     dataEvolutionDuPoint = pd.read_excel(adresse + "Tables/EvolutionDuPoint.xlsx", index_col=0, sheet_name='EvolutionDuPoint')
-    data = pd.read_csv(adresse + 'Tables/DATA_nettoye.csv')
+    data = pd.read_csv(adresse + 'Tables/base_NN_projete.csv')
     data = data[(data["PL_ME"].isin(PL_ME)) | (data["PL_ME"] == "DD")]
     data.reset_index(drop=True, inplace=True)
     data["PointsCotiseParAn"] = ajustementTemporellePoints * data["PointsCotiseParAn"]
@@ -113,3 +111,14 @@ if __name__ == '__main__':
     # distrib = pd.DataFrame(baseNewSample[(baseNewSample["Homme_Femme"]=="H")]["an_1ere_aff"].value_counts())
     # distrib.sort_index(inplace=True)
     # distrib.mean()
+
+
+
+
+
+
+
+
+
+
+

@@ -100,18 +100,18 @@ def definitionTables_KM(data, filtrePLME=["PL", "ME"], plot=False):
     if plot:
         plt.figure(figsize=[16, 9])
         plt.title("Table de passage")
-        plt.plot(tableActiftoRad, lebel="tableActiftoRad")
-        plt.plot(tableActiftoCER, lebel="tableActiftoCER")
-        plt.plot(tableActiftoDC, lebel="tableActiftoDC")
-        plt.plot(tableRadtoPrest, lebel="tableRadtoPrest")
-        plt.plot(tableRadtoDC, lebel="tableRadtoDC")
-        plt.plot(tableCERtoPrest, lebel="tableCERtoPrest")
-        plt.plot(tableCERtoDC, lebel="tableCERtoDC")
-        plt.plot(tablePRESTtoDC, lebel="tablePRESTtoDC")
+        plt.plot(tableActiftoRad, label="tableActiftoRad")
+        plt.plot(tableActiftoCER, label="tableActiftoCER")
+        plt.plot(tableActiftoDC, label="tableActiftoDC")
+        plt.plot(tableRadtoPrest, label="tableRadtoPrest")
+        plt.plot(tableRadtoDC, label="tableRadtoDC")
+        plt.plot(tableCERtoPrest, label="tableCERtoPrest")
+        plt.plot(tableCERtoDC, label="tableCERtoDC")
+        plt.plot(tablePRESTtoDC, label="tablePRESTtoDC")
         plt.legend()
 
     print('--- FIN tables_KM --------------------------------------------------------------------------------------------------')
-    return tableActiftoRad, tableActiftoCER, tableActiftoDC, tableRadtoPrest, tableRadtoDC, tableCERtoPrest, tableCERtoDC, tablePRESTtoDC
+    return (tableActiftoRad, tableActiftoCER, tableActiftoDC, tableRadtoPrest, tableRadtoDC, tableCERtoPrest, tableCERtoDC, tablePRESTtoDC)
 
 
 
