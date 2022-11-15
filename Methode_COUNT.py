@@ -50,11 +50,11 @@ def ajoutNouveauAdherents(data, AnneeCalcul=2021, finProj=2070, NombreNouveauxPa
 
 if __name__ == '__main__':
 
-    PL_ME = ["PL", "ME"]
+    PL_ME = ["PL"]
     debutProj = 2000
     finProj = 2070
-    AnneeCalcul = 2021
-    NombreNouveauxParAns = 3000 # PL ou ME ou les deux
+    AnneeCalcul = 2001
+    NombreNouveauxParAns = 3000 * len(PL_ME) # PL ou ME ou les deux
     VA = 46.96428571428571
     VS = 2.63
     Rendement = VS / VA
@@ -71,10 +71,10 @@ if __name__ == '__main__':
     difference_age_DD = pd.read_csv(adresse + 'Tables/difference_age_DD.csv', sep=';', encoding="ISO-8859-1")
     dataEvolutionDuPoint = pd.read_excel(adresse + "Tables/EvolutionDuPoint.xlsx", index_col=0, sheet_name='EvolutionDuPoint')
     data = pd.read_csv(adresse + 'Tables/DATA_nettoye.csv')
-    data = data[(data["PL_ME"].isin(PL_ME)) | (data["PL_ME"] == "DD")]
+    data = data[(data["PL_ME"].isin(PL_ME)) | (data["PL_ME"] == "DP")]
     data.reset_index(drop=True, inplace=True)
     data["PointsCotiseParAn"] = ajustementTemporellePoints * data["PointsCotiseParAn"]
-    # baseProjection_preProjection = volumeAnnuel(data.sample(frac=frequence), frequence=frequence, debutProj=debutProj, finProj=AnneeCalcul, tauxRecouvrement=tauxRecouvrement, VA=VA, VS=VS, dataEvolutionDuPoint=dataEvolutionDuPoint, coeffVFU=coeffVFU, tauxReversion=tauxReversion, plot=True)
+    baseProjection_preProjection = volumeAnnuel(data.sample(frac=frequence), frequence=frequence, debutProj=debutProj, finProj=AnneeCalcul, tauxRecouvrement=tauxRecouvrement, VA=VA, VS=VS, dataEvolutionDuPoint=dataEvolutionDuPoint, coeffVFU=coeffVFU, tauxReversion=tauxReversion, plot=True)
 
     print('--- Import des données: OK --------------------------------------------------------------------------------------------------')
 
@@ -94,12 +94,12 @@ if __name__ == '__main__':
     data["PointsAccumule"] = data["PointsCotiseParAn"] * (data["age_derniereCot"] - data["age_1ere_aff"])
     data["PointsCotiseParAn"] = data["PointsCotiseParAn"].fillna(0)
     data["PointsAccumule"] = data["PointsAccumule"].fillna(0)
-    data.loc[data["PointsAccumule"] <= 180, "BOOL_VERSEMENT_UNIQUE"] = 1
+    data.loc[(data["PointsAccumule"] <= 180) & (data["age"] <= data["age_liq_rc"]), "BOOL_VERSEMENT_UNIQUE"] = 1
 
     # On projette les volumes par état
     baseProjection = volumeAnnuel(data, frequence=frequence, debutProj=debutProj, finProj=finProj, tauxRecouvrement=tauxRecouvrement, VA=VA, VS=VS, dataEvolutionDuPoint=dataEvolutionDuPoint, coeffVFU=coeffVFU, tauxReversion=tauxReversion, plot=True)
 
-    baseProjection.to_csv(adresse + f"Tables/baseProjection.csv", index=False)
+    # baseProjection.to_csv(adresse + f"Tables/baseProjection.csv", index=False)
 
 
     # import Passif.bp.Encode_input_data_bp30032022 as inputData

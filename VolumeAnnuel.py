@@ -19,7 +19,19 @@ from scipy.optimize import curve_fit
 # import plotly.io as pio
 # pio.renderers.default = "browser"
 
-def volumeAnnuel(data, frequence, debutProj, finProj, tauxRecouvrement, VA, VS, dataEvolutionDuPoint, coeffVFU, tauxReversion, plot=True):
+def lissage(table, force=0.5):
+    for colonne in table.columns:
+        table[colonne+"_lisse"] = table[colonne]
+        for i, indice in enumerate(table.index[1:-1]):
+            table.loc[indice, colonne+"_lisse"] = (1 - force) * table.loc[indice, colonne] + force * (table.loc[table.index[i], colonne] + table.loc[table.index[i + 2], colonne]) / 2
+        table[colonne] = table[colonne+"_lisse"]
+        table.drop([colonne+"_lisse"], axis=1)
+    return table
+
+def volumeAnnuel(data, frequence, debutProj, finProj, tauxRecouvrement, VA, VS, dataEvolutionDuPoint, coeffVFU, tauxReversion, dataCotisation, plot=True, lisse=False):
+    for colonne in ["age_liq_rb", "age_liq_id", "NBR_POINT_REVERS_RC", "bool_liq_rc", "bool_rad", "bool_dc"]:
+        if colonne not in data.columns:
+            data[colonne] = math.inf
     print("Execute VolumeAnnuel ---------------------")
     # On découpe la donnée en trois tables : les DD, les DP et les CER (qui sont aussi des DP mais que l'on traite séparément)
     dataCER = data[data["type_ADH"] == "CER"]
@@ -37,7 +49,8 @@ def volumeAnnuel(data, frequence, debutProj, finProj, tauxRecouvrement, VA, VS, 
         baseProjection.loc[annee - debutProj, 'nbrCot'] = len(dataDP[((dataDP['age_rad'] > dataDP["age"]) | (dataDP['age_rad'].isna())) & ((dataDP['age_liq_rc'] > dataDP["age"]) | (dataDP['age_liq_rc'].isna())) & ((dataDP['age_1ere_aff'] <= dataDP["age"]) | (dataDP['age_1ere_aff'].isna())) & ((dataDP['age_dc'] > dataDP["age"]) | (dataDP['age_dc'].isna()))]) / frequence
         baseProjection.loc[annee - debutProj, 'nbrRadie'] = len(dataDP[(dataDP['age_rad'] <= dataDP["age"]) & ((dataDP['age_liq_rc'] > dataDP["age"]) | (dataDP['age_liq_rc'].isna())) & ((dataDP['age_1ere_aff'] <= dataDP["age"]) | (dataDP['age_1ere_aff'].isna())) & ((dataDP['age_dc'] > dataDP["age"]) | (dataDP['age_dc'].isna()))]) / frequence
         baseProjection.loc[annee - debutProj, 'nbrPrest'] = len(dataDP[(dataDP["BOOL_VERSEMENT_UNIQUE"] == 0) & (dataDP['age_liq_rc'] <= dataDP["age"]) & ((dataDP['age_dc'] > dataDP["age"]) | (dataDP['age_dc'].isna()))]) / frequence
-        baseProjection.loc[annee - debutProj, 'nbrVFU'] = len(dataDP[(dataDP["BOOL_VERSEMENT_UNIQUE"] == 1) & (dataDP['age_liq_rc'] <= dataDP["age"])]) / frequence # cumulatif
+        # il arrive que certains VFU n'ai pas de date de liq. il ne devraient pas ^tre considéré comme prest.
+        baseProjection.loc[annee - debutProj, 'nbrVFU'] = len(dataDP[(dataDP["BOOL_VERSEMENT_UNIQUE"] == 1) & (dataDP["age_liq_rc"] <= dataDP["age"]) & (dataDP["bool_liq_rc"]!=0)]) / frequence # cumulatif
         baseProjection.loc[annee - debutProj, 'nbrDC'] = len(dataDP[dataDP['age_dc'] <= dataDP["age"]]) / frequence # cumulatif
         baseProjection.loc[annee - debutProj, 'nbrCotCER'] = len(dataCER[((dataCER['age_rad'] > dataCER["age"]) | (dataCER['age_rad'].isna())) & (dataCER['age_liq_rc'] <= dataCER["age"]) & ((dataCER['age_1ere_aff'] <= dataCER["age"]) | (dataCER['age_1ere_aff'].isna())) & ((dataCER['age_dc'] > dataCER["age"]) | (dataCER['age_dc'].isna()))]) / frequence
         baseProjection.loc[annee - debutProj, 'nbrPrestCER'] = len(dataCER[(dataCER['age_rad'] <= dataCER["age"]) & (dataCER['age_liq_rc'] <= dataCER["age"]) & ((dataCER['age_1ere_aff'] <= dataCER["age"]) | (dataCER['age_1ere_aff'].isna())) & ((dataCER['age_dc'] > dataCER["age"]) | (dataCER['age_dc'].isna()))]) / frequence
@@ -88,11 +101,12 @@ def volumeAnnuel(data, frequence, debutProj, finProj, tauxRecouvrement, VA, VS, 
                                                                 * sum(dataDP.loc[(dataDP["BOOL_VERSEMENT_UNIQUE"] == 1) & (dataDP['age_liq_rc'] == dataDP["age"]) & ((dataDP['age_dc'] > dataDP["age"]) | (dataDP['age_dc'].isna())), "PointsAccumule"])
                                                                 * (dataEvolutionDuPoint.loc[annee, "VS_modif"] if annee in dataEvolutionDuPoint.index else VS) * coeffVFU
                                                                 ) / frequence
-
+    if lisse:
+        baseProjection = lissage(baseProjection)
     if plot:
         plt.figure(figsize=[16, 9])
         plt.title("Projection démographique")
-        plt.plot(baseProjection["Annee"], baseProjection[['nbrCot', 'nbrRadie', 'nbrPrest', 'nbrDC']], label = ['Cotisants', 'Radiés', 'Prestataires', 'Décédés'])  # Prest non CER
+        plt.plot(baseProjection["Annee"], baseProjection[['nbrCot', 'nbrRadie', 'nbrPrest', 'nbrDC', 'nbrVFU']], label = ['Cotisants', 'Radiés', 'Prestataires', 'Décédés', "VFU"])  # Prest non CER
         plt.legend()
         plt.figure(figsize=[16, 9])
         plt.title("Projection CER")

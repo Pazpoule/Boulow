@@ -23,6 +23,8 @@ adresse = "C:/Users/pnguyen/Desktop/ROOT/Projection_Photo/"
 
 def clean_data(base, anneeCalcul):
     base["age"] = AnneeCalcul - base["an_nais"]
+    for annee in ["an_liq_rb", "an_liq_rc", "an_liq_id", "an_rad", "an_dc"]: # on vire toutes les données trop récente
+        base.loc[base[annee]>anneeCalcul, annee] = np.nan
     base["ageMinRtetraite"] = np.select([(base["an_nais"] < 1951), (base["an_nais"] == 1951), (base["an_nais"] == 1952), (base["an_nais"] == 1953), (base["an_nais"] == 1954), (base["an_nais"] >= 1955)], [60, 60.33, 60.75, 61.167, 61.584, 62])
     base["ageTauxPlein"] = np.select([(base["an_nais"] < 1951), (base["an_nais"] == 1951), (base["an_nais"] == 1952), (base["an_nais"] == 1953), (base["an_nais"] == 1954), (base["an_nais"] >= 1955)], [65, 65.33, 65.75, 66.167, 66.584, 67])
     base.loc[(base["Statut_ADH"] == "CER") & (base["an_liq_rc"].isna()), "Statut_ADH"] = "ACTIF"

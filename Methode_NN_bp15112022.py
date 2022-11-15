@@ -80,8 +80,7 @@ if __name__ == '__main__':
     difference_age_DD = pd.read_csv(adresse + 'Tables/difference_age_DD.csv', sep=';', encoding="ISO-8859-1")
     dataEvolutionDuPoint = pd.read_excel(adresse + "Tables/EvolutionDuPoint.xlsx", index_col=0, sheet_name='EvolutionDuPoint')
     data = pd.read_csv(adresse + 'Tables/base_NN_projete.csv') # Exclut les DD, il va falloir les relier séparément
-    dataCotisation = pd.read_csv(adresse + f"Tables/projectionCotisation_PL.csv", index_col=0) if "PL" in PL_ME else None
-    dataPrestation = pd.read_csv(adresse + f"Tables/projectionPrestation_PL.csv", index_col=0) if "PL" in PL_ME else None
+    dataCotisation = pd.read_csv(adresse + f"projectionCotisation.csv", index_col=0)
     data["age"] = AnneeCalcul - data["an_nais"]
 
     # plotDistributionAges(data)
@@ -112,11 +111,6 @@ if __name__ == '__main__':
     # data["PointsCotiseParAn"] = data["PointsCotiseParAn"].fillna(0)
     data["PointsAccumule"] = data["PointsCotiseParAn"] * (data["age_derniereCot"] - data["age_1ere_aff"])
     data["PointsAccumule"] = data["PTS_RC_CARR"].fillna(0)
-    data = data.merge(dataCotisation, on="NUM_ADHERENT_FONCT", how="left").drop_duplicates()
-    data = data.merge(dataPrestation, on="NUM_ADHERENT_FONCT", how="left").drop_duplicates()
-    for annee in range(1992, 2071):
-        data.loc[(annee < data["an_nais"]+data["age_1ere_aff"]) | (annee >= data["an_nais"]+data["age_sortie"]), "prestation_" + str(annee)] = 0
-    data["prestation"] = sum([data["cotisation_" + str(annee)] for annee in range(1992, 2071)])
 
     data.loc[(data["PointsAccumule"] <= 180) & (data["age"] <= data["age_liq_rc"]), "BOOL_VERSEMENT_UNIQUE"] = 1
     data["PointsCotiseParAn"] = ajustementTemporellePoints * data["PointsCotiseParAn"]
